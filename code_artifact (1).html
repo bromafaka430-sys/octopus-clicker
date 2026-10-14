@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Осьминог Кликер</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d16',
+                        cardBg: '#0f172a',
+                        cardBorder: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #050811;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .click-pop {
+            position: absolute;
+            font-weight: 800;
+            color: #fbbf24;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { opacity: 1; transform: translateY(-30px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+
+        .octopus-click {
+            animation: octoPush 0.12s ease-in-out;
+        }
+
+        @keyframes octoPush {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.93); }
+            100% { transform: scale(1); }
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #050811; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+
+        .tab-btn-active {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+
+        @keyframes floatTarget {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .swimming-target {
+            animation: floatTarget 2s ease-in-out infinite;
+        }
+
+        /* Rainbow Skin Animation */
+        @keyframes rainbowBg {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        .skin-rainbow {
+            animation: rainbowBg 4s linear infinite;
+        }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen bg-black">
+
+    <!-- MAIN CONTAINER -->
+    <div class="w-full max-w-md bg-[#0b101d] flex flex-col h-screen overflow-hidden relative shadow-2xl">
+        
+        <!-- HEADER BLOCK -->
+        <div class="p-4 bg-[#0f172a]/90 backdrop-blur border-b border-slate-800/80 rounded-b-3xl space-y-3 z-10">
+            <!-- Top Bar -->
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="text-xl font-black text-pink-400 flex items-center gap-1.5">
+                        <span id="header-octo-icon">🐙</span> Осьминог Кликер
+                    </div>
+                    <div class="text-xs text-slate-400 mt-0.5" id="prestige-text">
+                        Престиж: 0 (x1)
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadGameCode()" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow flex items-center gap-1 transition-all">
+                        📥 Скачать
+                    </button>
+                    <div class="bg-slate-900 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-1">
+                        💵 Баланс: <span id="dollars-text">0.00$</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coins Balance -->
+            <div class="flex justify-between items-end pt-1">
+                <div>
+                    <div class="text-xs text-slate-400 font-medium mb-0.5">Монеты</div>
+                    <div class="text-3xl font-black text-amber-400 tracking-tight" id="coins-text">0</div>
+                </div>
+                <div class="text-xs font-bold text-emerald-400" id="cps-text">
+                    +0 монеты/сек
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="grid grid-cols-5 gap-1 bg-[#070b14] p-1.5 rounded-2xl border border-slate-800/80 text-[11px]">
+                <button onclick="switchTab('clicker')" id="tab-clicker" class="tab-btn-active text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all">
+                    🌊 Кликер
+                </button>
+                <button onclick="switchTab('cards')" id="tab-cards" class="text-slate-400 hover:text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all">
+                    🎴 Карты
+                </button>
+                <button onclick="switchTab('combo')" id="tab-combo" class="text-slate-400 hover:text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all">
+                    🎁 Комбо
+                </button>
+                <button onclick="switchTab('exchange')" id="tab-exchange" class="text-slate-400 hover:text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all">
+                    💰 Обмен
+                </button>
+                <button onclick="switchTab('skins')" id="tab-skins" class="text-slate-400 hover:text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all">
+                    🎨 Скины
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN SCROLLABLE CONTENT -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+
+            <!-- PAGE 1: CLICKER -->
+            <div id="page-clicker" class="space-y-4">
+                
+                <!-- OCEAN GAME PLAYGROUND -->
+                <div id="ocean-canvas" class="relative h-64 rounded-3xl bg-gradient-to-b from-slate-900 via-[#0b1736] to-[#120f24] border border-slate-800 overflow-hidden flex flex-col justify-center items-center shadow-inner cursor-pointer" onclick="clickOctopus(event)">
+                    
+                    <!-- Swimming Entity Target -->
+                    <div id="floating-target" class="absolute hidden cursor-pointer z-20 transition-all duration-300 transform hover:scale-125 swimming-target" onclick="clickTarget(event)">
+                        <div id="target-emoji" class="w-11 h-11 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center text-2xl shadow-xl">🐟</div>
+                    </div>
+
+                    <!-- Main Octopus Avatar -->
+                    <div id="octopus-avatar" class="relative z-10 transition-transform">
+                        <div id="octo-body" class="w-36 h-36 rounded-full bg-purple-600 border-4 border-purple-400 flex flex-col justify-center items-center shadow-[0_0_30px_rgba(168,85,247,0.4)] relative transition-colors duration-500">
+                            <!-- Fisherman Hat (Optional) -->
+                            <div id="skin-hat" class="absolute -top-7 text-3xl hidden">🧢</div>
+                            
+                            <!-- Eyes -->
+                            <div class="flex gap-4 mb-2">
+                                <div class="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                                    <div class="w-2.5 h-2.5 bg-black rounded-full"></div>
+                                </div>
+                                <div class="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                                    <div class="w-2.5 h-2.5 bg-black rounded-full"></div>
+                                </div>
+                            </div>
+                            <!-- Tentacles -->
+                            <div class="absolute -bottom-4 flex gap-1">
+                                <div id="tentacle-1" class="w-3.5 h-6 bg-purple-700 rounded-full transform -rotate-12 transition-colors duration-500"></div>
+                                <div id="tentacle-2" class="w-3.5 h-7 bg-purple-700 rounded-full transition-colors duration-500"></div>
+                                <div id="tentacle-3" class="w-3.5 h-7 bg-purple-700 rounded-full transition-colors duration-500"></div>
+                                <div id="tentacle-4" class="w-3.5 h-6 bg-purple-700 rounded-full transform rotate-12 transition-colors duration-500"></div>
+                            </div>
+
+                            <!-- Fisherman Rod (Optional) -->
+                            <div id="skin-rod" class="absolute -right-6 bottom-2 text-2xl hidden">🎣</div>
+                            <!-- Freddy Bear Icon -->
+                            <div id="skin-bear" class="text-4xl hidden">🐻</div>
+                        </div>
+                    </div>
+
+                    <!-- Seabed footer decor -->
+                    <div class="absolute bottom-2 inset-x-0 flex justify-between px-6 text-xs text-slate-500 opacity-80 pointer-events-none">
+                        <span>🦀</span>
+                        <span class="text-[10px] text-slate-400">Ловите плавающих рыбок и крабов!</span>
+                        <span>🪸</span>
+                    </div>
+                </div>
+
+                <!-- UPGRADES LIST -->
+                <div class="space-y-2.5">
+
+                    <!-- Passive Income -->
+                    <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-md">
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 tracking-wide uppercase">ДОХОД В СЕКУНДУ</div>
+                            <div class="text-xs text-slate-400 mt-0.5" id="lvl-cps">Уровень 0 (+0/сек)</div>
+                            <div class="text-xs font-black text-amber-400 mt-0.5" id="cost-cps">1 000 🪙</div>
+                        </div>
+                        <button onclick="upgradeStat('cps')" class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all">
+                            + Доход
+                        </button>
+                    </div>
+
+                    <!-- Grab Speed -->
+                    <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-md">
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 tracking-wide uppercase">СКОРОСТЬ ХВАТАНИЯ</div>
+                            <div class="text-xs text-slate-400 mt-0.5" id="lvl-click">Уровень 0</div>
+                            <div class="text-xs font-black text-amber-400 mt-0.5" id="cost-click">1 000 🪙</div>
+                        </div>
+                        <button onclick="upgradeStat('click')" class="bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all">
+                            + Клик
+                        </button>
+                    </div>
+
+                    <!-- Spawn Speed -->
+                    <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-md">
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 tracking-wide uppercase">СКОРОСТЬ СПАВНА</div>
+                            <div class="text-xs text-slate-400 mt-0.5" id="lvl-spawn">Уровень 0</div>
+                            <div class="text-xs font-black text-amber-400 mt-0.5" id="cost-spawn">1 000 🪙</div>
+                        </div>
+                        <button onclick="upgradeStat('spawn')" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all">
+                            + Спавн
+                        </button>
+                    </div>
+
+                    <!-- Gold Chance (+0.06% per level) -->
+                    <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-md">
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 tracking-wide uppercase">ШАНС ЗОЛОТА</div>
+                            <div class="text-xs text-slate-400 mt-0.5" id="lvl-gold">Уровень 0 (+0.00%)</div>
+                            <div class="text-xs font-black text-amber-400 mt-0.5" id="cost-gold">1 000 🪙</div>
+                        </div>
+                        <button onclick="upgradeStat('gold')" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all">
+                            + Удача
+                        </button>
+                    </div>
+
+                    <!-- Rebirth Button -->
+                    <button onclick="doPrestige()" class="w-full bg-gradient-to-r from-purple-800 to-indigo-800 hover:from-purple-700 hover:to-indigo-700 border border-purple-500/30 p-3.5 rounded-2xl flex items-center justify-between shadow-lg transition-all mt-2">
+                        <div class="text-left">
+                            <div class="text-xs font-bold text-white uppercase tracking-wider">ПЕРЕРОЖДЕНИЕ</div>
+                            <div class="text-[10px] text-purple-200" id="prestige-req">Требуется: 5 000 000 монет</div>
+                        </div>
+                        <span class="bg-purple-950 text-purple-300 font-bold text-xs px-3 py-1 rounded-xl border border-purple-500/40">
+                            Бонус х2
+                        </span>
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- PAGE 2: CARDS SHOP -->
+            <div id="page-cards" class="hidden space-y-3">
+                <p class="text-[11px] text-slate-400 text-center px-2">
+                    Покупайте карточки для пассивного дохода. Лимиты обновляются каждые 2 часа по МСК!
+                </p>
+
+                <!-- Dynamic Cards List -->
+                <div id="cards-list" class="space-y-2.5"></div>
+            </div>
+
+            <!-- PAGE 3: DAILY COMBO -->
+            <div id="page-combo" class="hidden space-y-4">
+                <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-4 text-center space-y-3">
+                    <h3 class="text-base font-black text-amber-400">🎁 Ежедневное Комбо</h3>
+                    <p class="text-xs text-slate-300">Соберите 3 секретные карточки дня для получения бонуса 350 000 монет!</p>
+                    
+                    <div id="combo-slots" class="grid grid-cols-3 gap-2 py-2"></div>
+
+                    <div id="combo-status" class="text-xs text-amber-300 font-bold">
+                        Покупайте карточки для поиска комбо!
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 4: CURRENCY EXCHANGE -->
+            <div id="page-exchange" class="hidden space-y-4">
+                <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-4 text-center space-y-3">
+                    <h3 class="text-base font-black text-emerald-400">💰 Обмен Монет</h3>
+                    <p class="text-xs text-slate-300">Курс: 500 000 монет = $0.03</p>
+                    
+                    <input type="number" id="exchange-input" oninput="calcExchange()" placeholder="Мин. 500 000" class="w-full bg-[#070b14] border border-slate-700 rounded-xl px-3 py-2 text-center text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+                    <div class="text-xs text-emerald-400 font-bold" id="exchange-calc-res">Вы получите: $0.0000</div>
+
+                    <button onclick="execExchange()" class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 font-bold text-xs py-3 rounded-xl shadow-lg transition-all">
+                        Обменять
+                    </button>
+                </div>
+            </div>
+
+            <!-- PAGE 5: SKINS SHOP -->
+            <div id="page-skins" class="hidden space-y-3">
+                <p class="text-[11px] text-slate-400 text-center px-2">
+                    Покупайте уникальные скины за $ баланс для усиления персонажа!
+                </p>
+
+                <!-- Dynamic Skins List -->
+                <div id="skins-list" class="space-y-2.5"></div>
+            </div>
+
+        </div>
+
+        <!-- TELEGRAM FOOTER BUTTON -->
+        <div class="p-3 bg-[#070b14] border-t border-slate-800/80 z-20">
+            <a href="https://t.me/Asset_Mansore" target="_blank" class="w-full bg-gradient-to-r from-sky-900/60 to-purple-900/60 hover:from-sky-800/80 hover:to-purple-800/80 text-sky-300 border border-sky-500/30 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all">
+                <i class="fa-brands fa-telegram text-sm"></i> Наш Telegram: @Asset_Mansore
+            </a>
+        </div>
+
+    </div>
+
+    <!-- GAME LOGIC SCRIPT -->
+    <script>
+        // State
+        let gameState = {
+            coins: 0,
+            dollars: 0,
+            prestige: 0,
+            stats: { clickLvl: 0, spawnLvl: 0, goldLvl: 0, cpsLvl: 0 },
+            purchasedCards: {},
+            cardPurchasedCount: {}, // tracks purchases per 2-hour MSK block { blockKey: { cardId: count } }
+            purchasedSkins: ['default'],
+            activeSkin: 'default',
+            comboClaimedDate: ""
+        };
+
+        // Cards Definition
+        const CARDS = [
+            { id: "crab", name: "Карточка краба", cost: 20000, cps: 150, icon: "🦀", bg: "from-orange-500 to-amber-600", btn: "bg-orange-500" },
+            { id: "fish", name: "Карточка рыбки", cost: 50000, cps: 350, icon: "🐟", bg: "from-blue-500 to-cyan-600", btn: "bg-cyan-500" },
+            { id: "gold_fish", name: "Карточка золотой рыбки", cost: 200000, cps: 1500, icon: "✨", bg: "from-amber-400 to-yellow-600", btn: "bg-amber-500" },
+            { id: "gold_crab", name: "Карточка золотого краба", cost: 250000, cps: 1600, icon: "🦀✨", bg: "from-yellow-500 to-amber-700", btn: "bg-amber-500" },
+            { id: "octopus", name: "Карточка осьминога", cost: 600000, cps: 4500, icon: "🐙", bg: "from-fuchsia-600 to-pink-600", btn: "bg-fuchsia-600" },
+            { id: "diamond_fish", name: "Бриллиантовая рыбка", cost: 1000000, cps: 9999, icon: "💎🐟", bg: "from-sky-400 to-blue-600", btn: "bg-sky-500" },
+            { id: "diamond_crab", name: "Бриллиантовый краб", cost: 2000000, cps: 17979, icon: "💎🦀", bg: "from-emerald-400 to-teal-600", btn: "bg-emerald-500" }
+        ];
+
+        // Skins Definition
+        const SKINS = [
+            { id: "default", name: "Стандартный", cost: 0, desc: "Обычный осьминог", icon: "🐙", luckBonus: 0, upgradeMult: 1 },
+            { id: "red", name: "Красный осьминог", cost: 0.05, desc: "+0.15% к удаче ко всем существам", icon: "🔴", luckBonus: 0.15, upgradeMult: 1 },
+            { id: "rainbow", name: "Переливающийся", cost: 0.20, desc: "+0.25% к удаче, плавная смена цветов", icon: "🌊", luckBonus: 0.25, upgradeMult: 1 },
+            { id: "fisherman", name: "Осьминог-рыбак", cost: 0.60, desc: "x1.5 к прокачкам (кроме удачи)", icon: "🎣", luckBonus: 0, upgradeMult: 1.5 },
+            { id: "toxic", name: "Токсичный осьминог", cost: 1.50, desc: "+0.5% к удаче ко всем существам", icon: "☣️", luckBonus: 0.5, upgradeMult: 1 },
+            { id: "freddy", name: "Фредди Фазбер", cost: 6.00, desc: "x2 к прокачкам и +0.66% к удаче", icon: "🐻", luckBonus: 0.66, upgradeMult: 2 },
+            { id: "dev1", name: "Призрачный осьминог", cost: 0, desc: "В разработке", icon: "👻", dev: true },
+            { id: "dev2", name: "Кибер-осьминог", cost: 0, desc: "В разработке", icon: "🤖", dev: true }
+        ];
+
+        // Helper: Get current 2-hour MSK Block key and seed
+        function getMSKBlockInfo() {
+            // MSK is UTC+3
+            const now = new Date();
+            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const mskTime = new Date(utcTime + (3 * 3600000));
+            
+            const year = mskTime.getFullYear();
+            const month = mskTime.getMonth();
+            const day = mskTime.getDate();
+            const hour = mskTime.getHours();
+            const blockIndex = Math.floor(hour / 2); // 0 to 11
+
+            const blockKey = `${year}-${month}-${day}-block-${blockIndex}`;
+            
+            // Seed based on MSK block time for pseudo-random limit (1 to 5)
+            const seed = (year * 1000000) + (month * 10000) + (day * 100) + blockIndex;
+            return { blockKey, seed };
+        }
+
+        function getCardLimit(cardId, blockSeed) {
+            // Simple PRNG hash based on cardId string and block seed
+            let hash = 0;
+            const str = cardId + blockSeed;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            const positiveHash = Math.abs(hash);
+            // Returns a limit between 1 and 5 inclusive
+            return (positiveHash % 5) + 1;
+        }
+
+        window.onload = function() {
+            loadGame();
+            renderCards();
+            renderSkins();
+            updateUI();
+            checkCombo();
+            startLoop();
+            scheduleTarget();
+        };
+
+        function saveGame() {
+            localStorage.setItem('octopus_clicker_v5_save', JSON.stringify(gameState));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('octopus_clicker_v5_save');
+            if (saved) {
+                try { 
+                    const parsed = JSON.parse(saved);
+                    gameState = { ...gameState, ...parsed }; 
+                    if (!gameState.stats.cpsLvl) gameState.stats.cpsLvl = 0;
+                    if (!gameState.purchasedSkins) gameState.purchasedSkins = ['default'];
+                    if (!gameState.activeSkin) gameState.activeSkin = 'default';
+                    if (!gameState.cardPurchasedCount) gameState.cardPurchasedCount = {};
+                } catch(e){}
+            }
+        }
+
+        function getActiveSkinObj() {
+            return SKINS.find(s => s.id === gameState.activeSkin) || SKINS[0];
+        }
+
+        function getPrestigeMult() { return Math.pow(2, gameState.prestige); }
+
+        function getTotalCPS() {
+            let cps = (gameState.stats.cpsLvl || 0) * 10;
+            for (let id in gameState.purchasedCards) {
+                const count = gameState.purchasedCards[id] || 0;
+                const card = CARDS.find(c => c.id === id);
+                if (card) cps += card.cps * count;
+            }
+            const skinMult = getActiveSkinObj().upgradeMult || 1;
+            return cps * getPrestigeMult() * skinMult;
+        }
+
+        function updateUI() {
+            document.getElementById('coins-text').innerText = Math.floor(gameState.coins).toLocaleString('ru-RU');
+            document.getElementById('cps-text').innerText = `+${getTotalCPS().toLocaleString('ru-RU')} монеты/сек`;
+            document.getElementById('prestige-text').innerText = `Престиж: ${gameState.prestige} (x${getPrestigeMult()})`;
+            document.getElementById('dollars-text').innerText = `${gameState.dollars.toFixed(2)}$`;
+
+            // Octopus Skin Visual Transformations
+            const octoBody = document.getElementById('octo-body');
+            const tentacles = [document.getElementById('tentacle-1'), document.getElementById('tentacle-2'), document.getElementById('tentacle-3'), document.getElementById('tentacle-4')];
+            const skinHat = document.getElementById('skin-hat');
+            const skinRod = document.getElementById('skin-rod');
+            const skinBear = document.getElementById('skin-bear');
+
+            // Reset special elements
+            skinHat.classList.add('hidden');
+            skinRod.classList.add('hidden');
+            skinBear.classList.add('hidden');
+            octoBody.classList.remove('skin-rainbow');
+
+            const currentSkin = gameState.activeSkin;
+
+            if (currentSkin === 'red') {
+                octoBody.className = "w-36 h-36 rounded-full bg-red-600 border-4 border-red-400 flex flex-col justify-center items-center shadow-[0_0_30px_rgba(239,68,68,0.5)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-red-800 rounded-full transition-colors duration-500"; });
+            } else if (currentSkin === 'rainbow') {
+                octoBody.className = "w-36 h-36 rounded-full bg-cyan-500 border-4 border-emerald-300 skin-rainbow flex flex-col justify-center items-center shadow-[0_0_30px_rgba(6,182,212,0.6)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-teal-700 rounded-full transition-colors duration-500"; });
+            } else if (currentSkin === 'fisherman') {
+                octoBody.className = "w-36 h-36 rounded-full bg-red-600 border-4 border-red-400 flex flex-col justify-center items-center shadow-[0_0_30px_rgba(239,68,68,0.5)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-red-800 rounded-full transition-colors duration-500"; });
+                skinHat.classList.remove('hidden');
+                skinRod.classList.remove('hidden');
+            } else if (currentSkin === 'toxic') {
+                octoBody.className = "w-36 h-36 rounded-full bg-emerald-950 border-4 border-lime-400 flex flex-col justify-center items-center shadow-[0_0_35px_rgba(163,230,53,0.6)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-emerald-900 rounded-full transition-colors duration-500"; });
+            } else if (currentSkin === 'freddy') {
+                octoBody.className = "w-36 h-36 rounded-full bg-amber-900 border-4 border-amber-700 flex flex-col justify-center items-center shadow-[0_0_35px_rgba(180,83,9,0.6)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-amber-950 rounded-full transition-colors duration-500"; });
+                skinBear.classList.remove('hidden');
+            } else if (gameState.prestige >= 1) {
+                octoBody.className = "w-36 h-36 rounded-full bg-slate-900 border-4 border-slate-600 flex flex-col justify-center items-center shadow-[0_0_35px_rgba(255,255,255,0.25)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-slate-800 rounded-full transition-colors duration-500"; });
+            } else {
+                octoBody.className = "w-36 h-36 rounded-full bg-purple-600 border-4 border-purple-400 flex flex-col justify-center items-center shadow-[0_0_30px_rgba(168,85,247,0.4)] relative transition-colors duration-500";
+                tentacles.forEach(t => { if (t) t.className = "w-3.5 h-6 bg-purple-700 rounded-full transition-colors duration-500"; });
+            }
+
+            const getUpgradeCost = (lvl) => {
+                let cost = 1000;
+                for (let i = 0; i < lvl; i++) {
+                    if (cost < 100000) cost += 500;
+                    else cost += 2000;
+                }
+                return cost;
+            };
+
+            const cpsCost = getUpgradeCost(gameState.stats.cpsLvl || 0);
+            const clickCost = getUpgradeCost(gameState.stats.clickLvl);
+            const spawnCost = getUpgradeCost(gameState.stats.spawnLvl);
+            const goldCost = getUpgradeCost(gameState.stats.goldLvl);
+
+            document.getElementById('cost-cps').innerText = `${cpsCost.toLocaleString('ru-RU')} 🪙`;
+            document.getElementById('lvl-cps').innerText = `Уровень ${gameState.stats.cpsLvl || 0} (+${((gameState.stats.cpsLvl || 0)*10*(getActiveSkinObj().upgradeMult||1)).toLocaleString('ru-RU')}/сек)`;
+
+            document.getElementById('cost-click').innerText = `${clickCost.toLocaleString('ru-RU')} 🪙`;
+            document.getElementById('lvl-click').innerText = `Уровень ${gameState.stats.clickLvl}`;
+
+            document.getElementById('cost-spawn').innerText = `${spawnCost.toLocaleString('ru-RU')} 🪙`;
+            document.getElementById('lvl-spawn').innerText = `Уровень ${gameState.stats.spawnLvl}`;
+
+            document.getElementById('cost-gold').innerText = `${goldCost.toLocaleString('ru-RU')} 🪙`;
+            document.getElementById('lvl-gold').innerText = `Уровень ${gameState.stats.goldLvl} (+${((gameState.stats.goldLvl || 0)*0.06).toFixed(2)}%)`;
+        }
+
+        function switchTab(tabName) {
+            ['clicker', 'cards', 'combo', 'exchange', 'skins'].forEach(t => {
+                document.getElementById(`page-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = "text-slate-400 hover:text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all";
+            });
+            document.getElementById(`page-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).className = "tab-btn-active text-white font-bold py-2 rounded-xl flex items-center justify-center gap-0.5 transition-all";
+        }
+
+        function clickOctopus(e) {
+            const skinMult = getActiveSkinObj().upgradeMult || 1;
+            const gain = (1 + gameState.stats.clickLvl * skinMult) * getPrestigeMult();
+            gameState.coins += gain;
+
+            const avatar = document.getElementById('octopus-avatar');
+            avatar.classList.remove('octopus-click');
+            void avatar.offsetWidth;
+            avatar.classList.add('octopus-click');
+
+            createPop(e.clientX, e.clientY, `+${Math.floor(gain)}`);
+            updateUI();
+            saveGame();
+        }
+
+        function createPop(x, y, text) {
+            const pop = document.createElement('div');
+            pop.className = 'click-pop';
+            pop.innerText = text;
+            pop.style.left = `${x - 15}px`;
+            pop.style.top = `${y - 20}px`;
+            document.body.appendChild(pop);
+            setTimeout(() => pop.remove(), 800);
+        }
+
+        function scheduleTarget() {
+            const delay = Math.max(2500, 8000 - gameState.stats.spawnLvl * 600);
+            setTimeout(() => {
+                spawnTarget();
+                scheduleTarget();
+            }, delay);
+        }
+
+        // Exact Probability Spawning System
+        function spawnTarget() {
+            const target = document.getElementById('floating-target');
+            const canvas = document.getElementById('ocean-canvas');
+            const targetEmoji = document.getElementById('target-emoji');
+
+            const roll = Math.random() * 100;
+            const skinLuck = getActiveSkinObj().luckBonus || 0;
+            const goldBonus = (gameState.stats.goldLvl * 0.06) + skinLuck;
+
+            let type = "fish";
+            let reward = 100;
+            let emoji = "🐟";
+            let bgStyle = "bg-blue-600/80 border-blue-400";
+
+            if (gameState.prestige >= 2 && Math.random() < 0.015) {
+                type = "leviathan";
+                reward = 55979;
+                emoji = "🐋";
+                bgStyle = "bg-indigo-900/90 border-cyan-400 shadow-[0_0_20px_cyan]";
+            } else if (gameState.prestige >= 1 && Math.random() < 0.05) {
+                type = "octopus";
+                reward = 15000;
+                emoji = "🐙";
+                bgStyle = "bg-purple-900/90 border-purple-400 shadow-[0_0_15px_purple]";
+            } else if (roll < (0.45 + goldBonus)) {
+                type = "diamond_crab";
+                reward = 97997;
+                emoji = "💎🦀";
+                bgStyle = "bg-emerald-500/90 border-teal-300 shadow-[0_0_20px_teal]";
+            } else if (roll < (1.45 + goldBonus)) {
+                type = "diamond_fish";
+                reward = 22979;
+                emoji = "💎🐟";
+                bgStyle = "bg-sky-500/90 border-blue-300 shadow-[0_0_18px_cyan]";
+            } else if (roll < (3.45 + goldBonus)) {
+                type = "gold_crab";
+                reward = 12000;
+                emoji = "🦀✨";
+                bgStyle = "bg-amber-500/90 border-amber-300 shadow-[0_0_15px_gold]";
+            } else if (roll < (7.45 + goldBonus)) {
+                type = "gold_fish";
+                reward = 4000;
+                emoji = "✨";
+                bgStyle = "bg-yellow-500/90 border-yellow-300 shadow-[0_0_15px_gold]";
+            } else if (roll < (27.45 + goldBonus)) {
+                type = "crab";
+                reward = 400;
+                emoji = "🦀";
+                bgStyle = "bg-orange-600/80 border-orange-400";
+            } else {
+                type = "fish";
+                reward = 100;
+                emoji = "🐟";
+                bgStyle = "bg-blue-600/80 border-blue-400";
+            }
+
+            targetEmoji.innerText = emoji;
+            targetEmoji.className = `w-11 h-11 rounded-full border flex items-center justify-center text-2xl shadow-xl ${bgStyle}`;
+            target.dataset.reward = reward;
+
+            const maxX = canvas.clientWidth - 55;
+            const isSeabed = (type === "crab" || type === "gold_crab" || type === "diamond_crab");
+            const maxY = isSeabed ? (canvas.clientHeight - 45) : (canvas.clientHeight - 60);
+            const minY = isSeabed ? (canvas.clientHeight - 55) : 10;
+
+            target.style.left = `${Math.max(10, Math.random() * maxX)}px`;
+            target.style.top = `${Math.max(minY, Math.random() * maxY)}px`;
+            target.classList.remove('hidden');
+
+            setTimeout(() => target.classList.add('hidden'), 3500);
+        }
+
+        function clickTarget(e) {
+            e.stopPropagation();
+            const target = document.getElementById('floating-target');
+            const baseReward = parseFloat(target.dataset.reward) || 100;
+            const bonus = baseReward * getPrestigeMult();
+
+            gameState.coins += bonus;
+            createPop(e.clientX, e.clientY, `+${Math.floor(bonus).toLocaleString('ru-RU')}`);
+            target.classList.add('hidden');
+            updateUI();
+            saveGame();
+        }
+
+        function upgradeStat(type) {
+            const getUpgradeCost = (lvl) => {
+                let cost = 1000;
+                for (let i = 0; i < lvl; i++) {
+                    if (cost < 100000) cost += 500;
+                    else cost += 2000;
+                }
+                return cost;
+            };
+
+            if (type === 'cps') {
+                const cost = getUpgradeCost(gameState.stats.cpsLvl || 0);
+                if (gameState.coins >= cost) { 
+                    gameState.coins -= cost; 
+                    gameState.stats.cpsLvl = (gameState.stats.cpsLvl || 0) + 1; 
+                }
+            } else if (type === 'click') {
+                const cost = getUpgradeCost(gameState.stats.clickLvl);
+                if (gameState.coins >= cost) { gameState.coins -= cost; gameState.stats.clickLvl++; }
+            } else if (type === 'spawn') {
+                const cost = getUpgradeCost(gameState.stats.spawnLvl);
+                if (gameState.coins >= cost) { gameState.coins -= cost; gameState.stats.spawnLvl++; }
+            } else if (type === 'gold') {
+                const cost = getUpgradeCost(gameState.stats.goldLvl);
+                if (gameState.coins >= cost) { gameState.coins -= cost; gameState.stats.goldLvl++; }
+            }
+            updateUI();
+            saveGame();
+        }
+
+        function renderCards() {
+            const list = document.getElementById('cards-list');
+            list.innerHTML = '';
+
+            const { blockKey, seed } = getMSKBlockInfo();
+            if (!gameState.cardPurchasedCount[blockKey]) {
+                gameState.cardPurchasedCount = { [blockKey]: {} }; // Reset / init for new MSK block
+            }
+            const blockPurchases = gameState.cardPurchasedCount[blockKey] || {};
+
+            CARDS.forEach(card => {
+                const level = gameState.purchasedCards[card.id] || 0;
+                const maxLimit = getCardLimit(card.id, seed);
+                const purchasedThisBlock = blockPurchases[card.id] || 0;
+                const stockLeft = Math.max(0, maxLimit - purchasedThisBlock);
+                const isOutOfStock = stockLeft <= 0;
+
+                const cardEl = document.createElement('div');
+                cardEl.className = "bg-[#0f172a] border border-slate-800 rounded-2xl p-3 flex items-center justify-between shadow-md";
+
+                cardEl.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${card.bg} flex items-center justify-center text-2xl shadow-md relative">
+                            ${card.icon}
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-white flex items-center gap-1.5">
+                                ${card.name}
+                                <span class="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded border border-slate-700">В наличии: ${stockLeft} шт.</span>
+                            </div>
+                            <div class="text-[11px] font-bold text-emerald-400 mt-0.5">
+                                +${card.cps.toLocaleString('ru-RU')} монет/сек
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">
+                                Всего куплено: ${level}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        ${isOutOfStock ? `
+                            <button disabled class="bg-slate-800 text-slate-500 font-bold text-xs px-3.5 py-2 rounded-xl cursor-not-allowed opacity-60">
+                                Распродано
+                            </button>
+                        ` : `
+                            <button onclick="buyCard('${card.id}')" class="${card.btn} hover:brightness-110 active:scale-95 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-md transition-all flex flex-col items-center">
+                                <span>Купить</span>
+                                <span class="text-[10px] opacity-90">${card.cost.toLocaleString('ru-RU')} 🪙</span>
+                            </button>
+                        `}
+                    </div>
+                `;
+                list.appendChild(cardEl);
+            });
+        }
+
+        function renderSkins() {
+            const list = document.getElementById('skins-list');
+            list.innerHTML = '';
+
+            SKINS.forEach(skin => {
+                const isOwned = gameState.purchasedSkins.includes(skin.id);
+                const isActive = gameState.activeSkin === skin.id;
+
+                const skinEl = document.createElement('div');
+                skinEl.className = `bg-[#0f172a] border ${isActive ? 'border-purple-500' : 'border-slate-800'} rounded-2xl p-3 flex items-center justify-between shadow-md`;
+
+                skinEl.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl shadow-md">
+                            ${skin.icon}
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-white flex items-center gap-1.5">
+                                ${skin.name}
+                                ${isActive ? '<span class="text-[9px] bg-purple-950 text-purple-300 px-1.5 py-0.2 rounded border border-purple-500/40">Надет</span>' : ''}
+                            </div>
+                            <div class="text-[10px] text-slate-300 mt-0.5">
+                                ${skin.desc}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        ${skin.dev ? `
+                            <span class="text-[10px] text-amber-400/80 font-bold px-2.5 py-1.5 bg-amber-950/40 border border-amber-500/20 rounded-xl block">
+                                В разработке
+                            </span>
+                        ` : isActive ? `
+                            <button class="bg-slate-800 text-slate-400 font-bold text-xs px-4 py-2 rounded-xl cursor-default">
+                                Надет
+                            </button>
+                        ` : isOwned ? `
+                            <button onclick="selectSkin('${skin.id}')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all">
+                                Надеть
+                            </button>
+                        ` : `
+                            <button onclick="buySkin('${skin.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-3.5 py-2 rounded-xl transition-all flex flex-col items-center">
+                                <span>Купить</span>
+                                <span class="text-[10px] opacity-90">$${skin.cost.toFixed(2)}</span>
+                            </button>
+                        `}
+                    </div>
+                `;
+                list.appendChild(skinEl);
+            });
+        }
+
+        function buyCard(cardId) {
+            const card = CARDS.find(c => c.id === cardId);
+            if (!card) return;
+
+            const { blockKey, seed } = getMSKBlockInfo();
+            if (!gameState.cardPurchasedCount[blockKey]) {
+                gameState.cardPurchasedCount = { [blockKey]: {} };
+            }
+            const blockPurchases = gameState.cardPurchasedCount[blockKey];
+            const maxLimit = getCardLimit(cardId, seed);
+            const purchasedThisBlock = blockPurchases[cardId] || 0;
+
+            if (purchasedThisBlock >= maxLimit) return;
+
+            if (gameState.coins >= card.cost) {
+                gameState.coins -= card.cost;
+                gameState.purchasedCards[cardId] = (gameState.purchasedCards[cardId] || 0) + 1;
+                blockPurchases[cardId] = purchasedThisBlock + 1;
+
+                renderCards();
+                updateUI();
+                checkCombo();
+                saveGame();
+            }
+        }
+
+        function buySkin(skinId) {
+            const skin = SKINS.find(s => s.id === skinId);
+            if (!skin || skin.dev) return;
+
+            if (gameState.dollars >= skin.cost) {
+                gameState.dollars -= skin.cost;
+                gameState.purchasedSkins.push(skinId);
+                gameState.activeSkin = skinId;
+                renderSkins();
+                updateUI();
+                saveGame();
+                alert(`Скин "${skin.name}" успешно куплен!`);
+            } else {
+                alert(`Недостаточно долларов на балансе! Обменяйте монеты во вкладке "💰 Обмен".`);
+            }
+        }
+
+        function selectSkin(skinId) {
+            if (gameState.purchasedSkins.includes(skinId)) {
+                gameState.activeSkin = skinId;
+                renderSkins();
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function doPrestige() {
+            const req = 5000000;
+            if (gameState.coins < req) {
+                alert(`Для перерождения нужно ${req.toLocaleString('ru-RU')} монет!`);
+                return;
+            }
+            if (confirm("Перерождение сбросит монеты и карточки, но удвоит доход и разблокирует редких морских гигантов! (Доллары и Скины НЕ сбрасываются)")) {
+                gameState.coins = 0;
+                gameState.prestige++;
+                gameState.purchasedCards = {};
+                gameState.stats = { clickLvl: 0, spawnLvl: 0, goldLvl: 0, cpsLvl: 0 };
+                renderCards();
+                renderSkins();
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function calcExchange() {
+            const val = parseFloat(document.getElementById('exchange-input').value) || 0;
+            const dollars = (val / 500000) * 0.03;
+            document.getElementById('exchange-calc-res').innerText = `Вы получите: $${dollars.toFixed(4)}`;
+        }
+
+        function execExchange() {
+            const val = parseFloat(document.getElementById('exchange-input').value) || 0;
+            if (val < 500000) { alert("Мин. сумма: 500 000 монет!"); return; }
+            if (gameState.coins >= val) {
+                const dollars = (val / 500000) * 0.03;
+                gameState.coins -= val;
+                gameState.dollars += dollars;
+                document.getElementById('exchange-input').value = '';
+                calcExchange();
+                updateUI();
+                saveGame();
+                alert(`Успешно обменяно на $${dollars.toFixed(4)}!`);
+            } else { alert("Недостаточно монет!"); }
+        }
+
+        function checkCombo() {
+            const today = new Date().toISOString().slice(0, 10);
+            const slots = document.getElementById('combo-slots');
+            const status = document.getElementById('combo-status');
+            const targetCards = [CARDS[0].id, CARDS[1].id, CARDS[2].id];
+
+            let count = 0;
+            slots.innerHTML = '';
+
+            targetCards.forEach(id => {
+                const owned = (gameState.purchasedCards[id] || 0) > 0;
+                if (owned) count++;
+                const card = CARDS.find(c => c.id === id);
+
+                const slot = document.createElement('div');
+                slot.className = `bg-[#070b14] p-2 rounded-xl border ${owned ? 'border-emerald-500/50' : 'border-slate-800'} flex flex-col items-center`;
+                slot.innerHTML = `
+                    <span class="text-xl mb-1">${card.icon}</span>
+                    <span class="text-[9px] font-bold ${owned ? 'text-emerald-400' : 'text-slate-500'}">${owned ? 'Открыто' : '???'}</span>
+                `;
+                slots.appendChild(slot);
+            });
+
+            if (gameState.comboClaimedDate === today) {
+                status.innerText = "✅ Сегодняшнее комбо получено!";
+                status.className = "text-xs text-emerald-400 font-bold";
+            } else if (count === 3) {
+                gameState.coins += 350000;
+                gameState.comboClaimedDate = today;
+                status.innerText = "🎉 Бонус +350 000 монет получен!";
+                status.className = "text-xs text-amber-400 font-bold animate-bounce";
+                updateUI();
+                saveGame();
+            } else {
+                status.innerText = `Собрано: ${count}/3 карточек дня`;
+                status.className = "text-xs text-amber-300 font-bold";
+            }
+        }
+
+        function downloadGameCode() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'octopus_clicker.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function startLoop() {
+            setInterval(() => {
+                const cps = getTotalCPS();
+                if (cps > 0) {
+                    gameState.coins += cps / 10;
+                    updateUI();
+                }
+                // Check every second if cards list needs re-rendering due to 2-hour MSK block change
+                renderCards();
+            }, 1000);
+            setInterval(saveGame, 5000);
+        }
+    </script>
+</body>
+</html>
