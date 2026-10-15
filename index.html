@@ -223,18 +223,6 @@
                         </button>
                     </div>
 
-                    <!-- Spawn Speed -->
-                    <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-md">
-                        <div>
-                            <div class="text-xs font-bold text-slate-200 tracking-wide uppercase">СКОРОСТЬ СПАВНА</div>
-                            <div class="text-xs text-slate-400 mt-0.5" id="lvl-spawn">Уровень 0</div>
-                            <div class="text-xs font-black text-amber-400 mt-0.5" id="cost-spawn">1 000 🪙</div>
-                        </div>
-                        <button onclick="upgradeStat('spawn')" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all">
-                            + Спавн
-                        </button>
-                    </div>
-
                     <!-- Gold Chance (+0.06% per level) -->
                     <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-md">
                         <div>
@@ -329,7 +317,7 @@
             coins: 0,
             dollars: 0,
             prestige: 0,
-            stats: { clickLvl: 0, spawnLvl: 0, goldLvl: 0, cpsLvl: 0 },
+            stats: { clickLvl: 0, goldLvl: 0, cpsLvl: 0 },
             purchasedCards: {},
             cardPurchasedCount: {}, // tracks purchases per 2-hour MSK block { blockKey: { cardId: count } }
             purchasedSkins: ['default'],
@@ -496,7 +484,6 @@
 
             const cpsCost = getUpgradeCost(gameState.stats.cpsLvl || 0);
             const clickCost = getUpgradeCost(gameState.stats.clickLvl);
-            const spawnCost = getUpgradeCost(gameState.stats.spawnLvl);
             const goldCost = getUpgradeCost(gameState.stats.goldLvl);
 
             document.getElementById('cost-cps').innerText = `${cpsCost.toLocaleString('ru-RU')} 🪙`;
@@ -505,8 +492,6 @@
             document.getElementById('cost-click').innerText = `${clickCost.toLocaleString('ru-RU')} 🪙`;
             document.getElementById('lvl-click').innerText = `Уровень ${gameState.stats.clickLvl}`;
 
-            document.getElementById('cost-spawn').innerText = `${spawnCost.toLocaleString('ru-RU')} 🪙`;
-            document.getElementById('lvl-spawn').innerText = `Уровень ${gameState.stats.spawnLvl}`;
 
             document.getElementById('cost-gold').innerText = `${goldCost.toLocaleString('ru-RU')} 🪙`;
             document.getElementById('lvl-gold').innerText = `Уровень ${gameState.stats.goldLvl} (+${((gameState.stats.goldLvl || 0)*0.06).toFixed(2)}%)`;
@@ -547,7 +532,7 @@
         }
 
         function scheduleTarget() {
-            const delay = Math.max(2500, 8000 - gameState.stats.spawnLvl * 600);
+            const delay = 8000;
             setTimeout(() => {
                 spawnTarget();
                 scheduleTarget();
@@ -659,9 +644,6 @@
             } else if (type === 'click') {
                 const cost = getUpgradeCost(gameState.stats.clickLvl);
                 if (gameState.coins >= cost) { gameState.coins -= cost; gameState.stats.clickLvl++; }
-            } else if (type === 'spawn') {
-                const cost = getUpgradeCost(gameState.stats.spawnLvl);
-                if (gameState.coins >= cost) { gameState.coins -= cost; gameState.stats.spawnLvl++; }
             } else if (type === 'gold') {
                 const cost = getUpgradeCost(gameState.stats.goldLvl);
                 if (gameState.coins >= cost) { gameState.coins -= cost; gameState.stats.goldLvl++; }
@@ -838,7 +820,7 @@
                 gameState.coins = 0;
                 gameState.prestige++;
                 gameState.purchasedCards = {};
-                gameState.stats = { clickLvl: 0, spawnLvl: 0, goldLvl: 0, cpsLvl: 0 };
+                gameState.stats = { clickLvl: 0, goldLvl: 0, cpsLvl: 0 };
                 renderCards();
                 renderSkins();
                 updateUI();
